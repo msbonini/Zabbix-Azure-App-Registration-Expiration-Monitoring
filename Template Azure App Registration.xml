@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>5.0</version>
-    <date>2024-02-22T19:17:31Z</date>
+    <date>2024-02-22T19:32:36Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -9,8 +9,8 @@
     </groups>
     <templates>
         <template>
-            <template>Template Azure App Registration</template>
-            <name>Template Azure App Registration</name>
+            <template>Template Azure App Registration Export</template>
+            <name>Template Azure App Registration Export</name>
             <description>ZabbixAzureSecretTTL&#13;
 &#13;
 Powershell script to audit all Azure AD app registrations and notify secret key or certificate expiration to zabbix using Microsoft Graph. Script check all the Azure AD Applications registered in your tenant and check key expiration&#13;
@@ -120,7 +120,7 @@ KeyID: {#KEYID} precisa ser atualizado</description>
                                     <dependencies>
                                         <dependency>
                                             <name>A chave do aplicativo Azure {#DISPLAYNAME} expira em uma semana</name>
-                                            <expression>{Template Azure App Registration:app.registration.[{#AADAPPOBJID} {#KEYID}].last()}&lt;{$HIGHALERTDAYS}</expression>
+                                            <expression>{Template Azure App Registration Export:app.registration.[{#AADAPPOBJID} {#KEYID}].last()}&lt;{$HIGHALERTDAYS}</expression>
                                         </dependency>
                                     </dependencies>
                                     <tags>
@@ -150,7 +150,7 @@ precisa ser atualizado o mais breve possivel.</description>
                                     <dependencies>
                                         <dependency>
                                             <name>A chave do aplicativo Azure {#DISPLAYNAME} expirou</name>
-                                            <expression>{Template Azure App Registration:app.registration.[{#AADAPPOBJID} {#KEYID}].last()}&lt;=0</expression>
+                                            <expression>{Template Azure App Registration Export:app.registration.[{#AADAPPOBJID} {#KEYID}].last()}&lt;=0</expression>
                                         </dependency>
                                     </dependencies>
                                     <tags>
@@ -220,7 +220,6 @@ Verifique o script externo no servidor {HOST.NAME}</description>
             <macros>
                 <macro>
                     <macro>{$APPID}</macro>
-                    <type>SECRET_TEXT</type>
                     <description>app id azure</description>
                 </macro>
                 <macro>
@@ -230,12 +229,10 @@ Verifique o script externo no servidor {HOST.NAME}</description>
                 </macro>
                 <macro>
                     <macro>{$SECRET}</macro>
-                    <type>SECRET_TEXT</type>
                     <description>Secret azure</description>
                 </macro>
                 <macro>
                     <macro>{$TENANTID}</macro>
-                    <type>SECRET_TEXT</type>
                     <description>Tenant id azure</description>
                 </macro>
                 <macro>
