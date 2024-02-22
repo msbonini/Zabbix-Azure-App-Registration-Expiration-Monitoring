@@ -24,3 +24,11 @@ https://github.com/Ufoton/ZabbixAzureSecretTTL
 Powershell 7.0 or higher is required for correct operation.
 
 Install-Module Microsoft.Graph -Scope AllUsers
+
+3 - Command line usage for testing the zabbix discovery rule:
+
+.\Azure_App_Registration_Discovery.ps1 -appid {$APPID} -tenantid {$TENANTID} -secret {$SECRET} lld
+
+4 - Testing to Get Bulk Data from Azure App Registrations in JSON
+
+.\App_Registration_Azure_Dados.ps1" -appid {$APPID} -tenantid {$TENANTID} -secret {$SECRET} -requestType "credentials"
