@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>5.0</version>
+    <date>2024-02-22T19:17:31Z</date>
+    <groups>
+        <group>
+            <name>Templates</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>Template Azure App Registration</template>
+            <name>Template Azure App Registration</name>
+            <description>ZabbixAzureSecretTTL&#13;
+&#13;
+Powershell script to audit all Azure AD app registrations and notify secret key or certificate expiration to zabbix using Microsoft Graph. Script check all the Azure AD Applications registered in your tenant and check key expiration&#13;
+&#13;
+Requirements&#13;
+Script uses an Azure App Registration. The App Registration is used for authentication in the Microsoft Graph API. The minimum required permission is: Application.Read.All&#13;
+&#13;
+Script need &quot;client secret&quot;, &quot;tenant id&quot; and &quot;client id&quot; from Azure App.&#13;
+&#13;
+Zabbix integration&#13;
+Powershell must be instaled https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux?view=powershell-7.2. Powershell module Microsoft.Graph must be instaled&#13;
+&#13;
+Install-Module Microsoft.Graph -Scope AllUsers&#13;
+Put script into external script directory https://www.zabbix.com/documentation/current/en/manual/config/items/itemtypes/external In same directory create settings.json.&#13;
+&#13;
+To check:&#13;
+&#13;
+sudo -u zabbix ./azurekeyttl.ps1 lld&#13;
+Import template and add to Zabbix server host.&#13;
+&#13;
+https://github.com/Ufoton/ZabbixAzureSecretTTL</description>
+            <groups>
+                <group>
+                    <name>Templates</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>App Registration Dados</name>
+                </application>
+                <application>
+                    <name>Azure - AppRegistration - Validade</name>
+                </application>
+            </applications>
+            <items>
+                <item>
+                    <name>Obter Dados em Massa App Registrations Azure</name>
+                    <key>system.run[pwsh -File &quot;C:\Zabbix\monitoramento\scripts\App_Registration_Azure_Dados.ps1&quot; -appid {$APPID} -tenantid {$TENANTID} -secret {$SECRET} -requestType &quot;credentials&quot;]</key>
+                    <delay>12h</delay>
+                    <history>0</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <applications>
+                        <application>
+                            <name>App Registration Dados</name>
+                        </application>
+                    </applications>
+                </item>
+            </items>
+            <discovery_rules>
+                <discovery_rule>
+                    <name>Azure App Registations Discovery</name>
+                    <key>system.run[pwsh -File &quot;C:\Zabbix\monitoramento\scripts\Azure_App_Registration_Discovery.ps1&quot; -appid {$APPID} -tenantid {$TENANTID} -secret {$SECRET} lld]</key>
+                    <delay>1h</delay>
+                    <lifetime>0</lifetime>
+                    <description>Realiza a descoberta dos App Registrations para adicionar ao Zabbix Automaticamente.</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>{#DISPLAYNAME} - Tempo Restante para expirar</name>
+                            <type>DEPENDENT</type>
+                            <key>app.registration.[{#AADAPPOBJID} {#KEYID}]</key>
+                            <delay>0</delay>
+                            <history>7d</history>
+                            <trends>30d</trends>
+                            <value_type>FLOAT</value_type>
+                            <units>dias</units>
+                            <description>Aplicativo Azure {#DISPLAYNAME} AppID {#APPID} chave {#KEYID} ttl&#13;
+&#13;
+Tipo: {#CREDENTIALTYPE}</description>
+                            <applications>
+                                <application>
+                                    <name>Azure - AppRegistration - Validade</name>
+                                </application>
+                            </applications>
+                            <preprocessing>
+                                <step>
+                                    <type>JSONPATH</type>
+                                    <params>$[?(@.KEYID=='{#KEYID}')].DAYSREMAINING</params>
+                                    <error_handler>DISCARD_VALUE</error_handler>
+                                </step>
+                                <step>
+                                    <type>STR_REPLACE</type>
+                                    <params>[
+</params>
+                                </step>
+                                <step>
+                                    <type>STR_REPLACE</type>
+                                    <params>]
+</params>
+                                </step>
+                            </preprocessing>
+                            <master_item>
+                                <key>system.run[pwsh -File &quot;C:\Zabbix\monitoramento\scripts\App_Registration_Azure_Dados.ps1&quot; -appid {$APPID} -tenantid {$TENANTID} -secret {$SECRET} -requestType &quot;credentials&quot;]</key>
+                            </master_item>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last()}&lt;{$WARNINGALERTDAYS}</expression>
+                                    <name>A chave do aplicativo Azure {#DISPLAYNAME} expira em breve</name>
+                                    <url>https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/{#APPID}/isMSAApp~/false</url>
+                                    <priority>WARNING</priority>
+                                    <description>Aplicativo Azure: {#DISPLAYNAME} &#13;
+&#13;
+AppID: {#APPID} &#13;
+&#13;
+KeyID: {#KEYID} precisa ser atualizado</description>
+                                    <manual_close>YES</manual_close>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>A chave do aplicativo Azure {#DISPLAYNAME} expira em uma semana</name>
+                                            <expression>{Template Azure App Registration:app.registration.[{#AADAPPOBJID} {#KEYID}].last()}&lt;{$HIGHALERTDAYS}</expression>
+                                        </dependency>
+                                    </dependencies>
+                                    <tags>
+                                        <tag>
+                                            <tag>location</tag>
+                                            <value>azure</value>
+                                        </tag>
+                                        <tag>
+                                            <tag>tipo</tag>
+                                            <value>{#CREDENTIALTYPE}</value>
+                                        </tag>
+                                    </tags>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{last()}&lt;{$HIGHALERTDAYS}</expression>
+                                    <name>A chave do aplicativo Azure {#DISPLAYNAME} expira em uma semana</name>
+                                    <url>https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/{#APPID}/isMSAApp~/false</url>
+                                    <priority>AVERAGE</priority>
+                                    <description>Aplicativo Azure: {#DISPLAYNAME} &#13;
+&#13;
+AppID: {#APPID} &#13;
+&#13;
+KeyID: {#KEYID}&#13;
+&#13;
+precisa ser atualizado o mais breve possivel.</description>
+                                    <manual_close>YES</manual_close>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>A chave do aplicativo Azure {#DISPLAYNAME} expirou</name>
+                                            <expression>{Template Azure App Registration:app.registration.[{#AADAPPOBJID} {#KEYID}].last()}&lt;=0</expression>
+                                        </dependency>
+                                    </dependencies>
+                                    <tags>
+                                        <tag>
+                                            <tag>location</tag>
+                                            <value>azure</value>
+                                        </tag>
+                                        <tag>
+                                            <tag>tipo</tag>
+                                            <value>{#CREDENTIALTYPE}</value>
+                                        </tag>
+                                    </tags>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{last()}&lt;=0</expression>
+                                    <name>A chave do aplicativo Azure {#DISPLAYNAME} expirou</name>
+                                    <url>https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/{#APPID}/isMSAApp~/false</url>
+                                    <priority>HIGH</priority>
+                                    <description>Aplicativo Azure {#DISPLAYNAME} &#13;
+&#13;
+AppID {#APPID} &#13;
+&#13;
+KeyID {#KEYID} &#13;
+&#13;
+precisa renovado imediatamente ou caso não for utilizado deve ser removido.</description>
+                                    <manual_close>YES</manual_close>
+                                    <tags>
+                                        <tag>
+                                            <tag>location</tag>
+                                            <value>azure</value>
+                                        </tag>
+                                        <tag>
+                                            <tag>tipo</tag>
+                                            <value>{#CREDENTIALTYPE}</value>
+                                        </tag>
+                                    </tags>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{nodata(1w)}=1</expression>
+                                    <name>Aplicativo Azure {#DISPLAYNAME} sem dados por 1 semana</name>
+                                    <url>https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/{#APPID}/isMSAApp~/false</url>
+                                    <priority>WARNING</priority>
+                                    <description>Aplicativo do Azure {#DISPLAYNAME} &#13;
+&#13;
+AppID {#APPID} &#13;
+&#13;
+KeyID {#KEYID} sem dados por uma semana. &#13;
+&#13;
+Verifique o script externo no servidor {HOST.NAME}</description>
+                                    <manual_close>YES</manual_close>
+                                    <tags>
+                                        <tag>
+                                            <tag>location</tag>
+                                            <value>azure</value>
+                                        </tag>
+                                        <tag>
+                                            <tag>tipo</tag>
+                                            <value>{#CREDENTIALTYPE}</value>
+                                        </tag>
+                                    </tags>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                    </item_prototypes>
+                </discovery_rule>
+            </discovery_rules>
+            <macros>
+                <macro>
+                    <macro>{$APPID}</macro>
+                    <type>SECRET_TEXT</type>
+                    <description>app id azure</description>
+                </macro>
+                <macro>
+                    <macro>{$HIGHALERTDAYS}</macro>
+                    <value>8</value>
+                    <description>days</description>
+                </macro>
+                <macro>
+                    <macro>{$SECRET}</macro>
+                    <type>SECRET_TEXT</type>
+                    <description>Secret azure</description>
+                </macro>
+                <macro>
+                    <macro>{$TENANTID}</macro>
+                    <type>SECRET_TEXT</type>
+                    <description>Tenant id azure</description>
+                </macro>
+                <macro>
+                    <macro>{$WARNINGALERTDAYS}</macro>
+                    <value>16</value>
+                    <description>days</description>
+                </macro>
+            </macros>
+        </template>
+    </templates>
+</zabbix_export>
