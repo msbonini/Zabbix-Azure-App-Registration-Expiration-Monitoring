@@ -1,6 +1,10 @@
-# Attention, this monitoring was developed in Zabbix 5.0 so previous versions are not compatible
+
 # Zabbix-Azure-App-Registration-Expiration-Monitoring
+
+# Attention, this monitoring was developed in Zabbix 5.0 so previous versions are not compatible
+
 Powershell script to audit all Azure AD app registrations and notify secret key or certificate expiration to zabbix using Microsoft Graph. Script check all the Azure AD Applications registered in your tenant and check key expiration.
+
 
 This project was created based on the project below where we used the main idea and created more optimized monitoring with discovery rules and mass data collection thinking about large environments.
 
